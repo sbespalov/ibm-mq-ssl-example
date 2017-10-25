@@ -1,0 +1,16 @@
+# IntelliJ IDEA
+*.ipr
+*.iml
+*.iws
+.ideaDataSources
+
+# Project
+.idea/
+target/
+dataSources/
+.project
+.springBeans
+.recommenders/
+.classpath
+.metadata/
+.settings/
