@@ -1,0 +1,17 @@
+version: '2.0'
+
+services:
+
+  ibm-mq-ssl-service:
+    build: ibm-mq-ssl-example
+    environment:
+      - MQ_QMGR_NAME=QM1
+      - MQ_SSL=true
+      - MQ_SSL_PASS=passw0rd
+      - MQ_SSL_CIPH=RC4_MD5_US  
+      - AMQ_SSL_V3_ENABLE=1
+      - LICENSE=accept
+    ports:
+      - "1414:1414"
+    volumes:
+      - ./ssl/keystore:/var/mqm/keystore

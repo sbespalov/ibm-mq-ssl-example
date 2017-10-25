@@ -1,0 +1,80 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>ru.ptit.example</groupId>
+    <artifactId>ibm-mq-ssl-example</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+
+    <properties>
+        <jms.version>2.0.1</jms.version>
+        <websphere.mq.version>7.5.0.2</websphere.mq.version>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>local-maven-repo</id>
+            <url>file:///${basedir}/../libs</url>
+        </repository>
+    </repositories>
+
+
+    <dependencies>
+        <dependency>
+            <groupId>com.ibm</groupId>
+            <artifactId>com.ibm.mq</artifactId>
+            <version>${websphere.mq.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm</groupId>
+            <artifactId>com.ibm.mq.pcf</artifactId>
+            <version>${websphere.mq.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm</groupId>
+            <artifactId>com.ibm.mq.jmqi</artifactId>
+            <version>${websphere.mq.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm</groupId>
+            <artifactId>com.ibm.mqjms</artifactId>
+            <version>${websphere.mq.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm</groupId>
+            <artifactId>com.ibm.mq.headers</artifactId>
+            <scope>compile</scope>
+            <version>${websphere.mq.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm</groupId>
+            <artifactId>com.ibm.mq.commonservices</artifactId>
+            <scope>compile</scope>
+            <version>${websphere.mq.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm</groupId>
+            <artifactId>com.ibm.connector</artifactId>
+            <scope>compile</scope>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm</groupId>
+            <artifactId>dhbcore</artifactId>
+            <version>${websphere.mq.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.jms</groupId>
+            <artifactId>javax.jms-api</artifactId>
+            <version>${jms.version}</version>
+        </dependency>
+
+
+    </dependencies>
+
+</project>
