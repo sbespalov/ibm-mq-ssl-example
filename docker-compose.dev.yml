@@ -16,4 +16,5 @@ services:
       - "1414:1414"
     volumes:
       - ./ssl/keystore:/tmp/tlsTemp
-      - ./mqm:/var/mqm
+      # Volume to persist container data
+      #- ./mqm:/var/mqm

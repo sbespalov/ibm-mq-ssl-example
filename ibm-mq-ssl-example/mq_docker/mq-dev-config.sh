@@ -17,6 +17,29 @@
 
 set -e
 
+configure_os_user()
+{
+  # The group ID of the user to configure
+  local -r GROUP_NAME=$1
+  # Name of environment variable containing the user name
+  local -r USER_VAR=$2
+  # Name of environment variable containing the password
+  local -r PASSWORD=$3
+  # Home directory for the user
+  local -r HOME=$4
+  # Determine the login name of the user (assuming it exists already)
+
+  # if user does not exist
+  if ! id ${!USER_VAR} 2>1 > /dev/null; then
+    # create
+    useradd --gid ${GROUP_NAME} --home ${HOME} ${!USER_VAR}
+  fi
+  # Change the user's password (if set)
+  if [ ! "${!PASSWORD}" == "" ]; then
+    echo ${!USER_VAR}:${!PASSWORD} | chpasswd
+  fi
+}
+
 configure_tls()
 {
    local -r PASSPHRASE=${MQ_SSL_PASS:-"passw0rd"}
@@ -39,8 +62,8 @@ configure_tls()
     	runmqakm -keydb -stashpw -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE}
 	fi
 	
-	runmqckm -cert -create -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebspheremqqm1 -dn "CN=00CA0001CCFcf99usr,O=Savings Bank of the Russian Federation,C=RU" -size 2048
-	runmqckm -cert -extract -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebspheremqqm1 -target /tmp/tlsTemp/cfmq.arm
+runmqckm -cert -create -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebspheremq${MQ_QMGR_NAME} -dn "CN=00CA0001CCFcf99usr,O=Savings Bank of the Russian Federation,C=RU" -size 2048
+	runmqckm -cert -extract -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebspheremq${MQ_QMGR_NAME} -target /tmp/tlsTemp/cfmq.arm
 
 	
     echo "LOG mq-dev-config.sh : creating keystore"
@@ -89,11 +112,17 @@ echo "LOG mq-dev-config.sh : USE_SSL = ${MQ_SSL}"
 DATA_PATH=`dspmqver -b -f 4096`
 INSTALLATION=`dspmqver -b -f 512`
 
+
+MQ_APP_NAME="app"
+MQ_APP_PASSWORD=${MQ_APP_PASSWORD:-""}
+
 echo "LOG mq-dev-config.sh : Configuring app user"
 if ! getent group mqclient; then
   # Group doesn't exist already
   groupadd mqclient
 fi
+
+configure_os_user mqclient MQ_APP_NAME MQ_APP_PASSWORD /home/app
 
 # Set authorities to give access to qmgr, queues and topic
 su -l mqm -c "setmqaut -m ${MQ_QMGR_NAME} -t qmgr -g mqclient +connect +inq"

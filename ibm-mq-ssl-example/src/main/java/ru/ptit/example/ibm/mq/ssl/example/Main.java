@@ -31,7 +31,7 @@ public class Main
         private String preferTLS = Boolean.TRUE.toString();
         private String useIBMCipherMappings = Boolean.TRUE.toString();;
         private String disabledAlgorithms = "";
-        private String debugSSL = "all";;
+        private String debugSSL = "false";//all
     }
 
     public static void main(String[] args)
@@ -55,7 +55,7 @@ public class Main
 
         java.security.Security.setProperty("jdk.tls.disabledAlgorithms", config.disabledAlgorithms.trim());
 
-        mqQueueConnectionFactory.setSSLCipherSuite(config.sslciph = "SSL_RSA_WITH_RC4_128_MD5");
+        mqQueueConnectionFactory.setSSLCipherSuite(config.sslciph);
         mqQueueConnectionFactory.setTransportType(WMQConstants.WMQ_CM_CLIENT);
         mqQueueConnectionFactory.setCCSID(config.ccsid);
         mqQueueConnectionFactory.setChannel(config.channel);
@@ -65,7 +65,11 @@ public class Main
         mqQueueConnectionFactory.setQueueManager(config.queueManager);
 
         Connection c = mqQueueConnectionFactory.createConnection();
-        assert c != null;
+        System.out.println("Connected!");
+        System.out.println("Connection Info:");
+        System.out.println(c.getMetaData());
+        c.close();
+        System.out.println("Disconnected!");
     }
 
 }
