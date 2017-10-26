@@ -8,10 +8,12 @@ services:
       - MQ_QMGR_NAME=QM1
       - MQ_SSL=true
       - MQ_SSL_PASS=passw0rd
-      - MQ_SSL_CIPH=RC4_MD5_US  
+      - MQ_SSL_CIPH=RC4_MD5_US
+      - MQ_TLS_PASSPHRASE=passw0rd
+      - MQ_TLS_KEYSTORE=/tmp/tlsTemp/cf-keystore/cfmq.p12  
       - AMQ_SSL_V3_ENABLE=1
       - LICENSE=accept
     ports:
       - "1414:1414"
     volumes:
-      - ./ssl/keystore:/var/mqm/keystore
+      - ./ssl/keystore:/tmp/tlsTemp/cf-keystore

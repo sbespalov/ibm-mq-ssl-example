@@ -19,96 +19,88 @@ set -e
 
 configure_tls()
 {
-   local -r PASSPHRASE=${MQ_SSL_PASS:-"passw0rd"}
-   echo "LOG mq-dev-config.sh : PASSPHRASE = ${PASSPHRASE}"
+  local -r PASSPHRASE=${MQ_TLS_PASSPHRASE}
+  local -r LOCATION=${MQ_TLS_KEYSTORE}
 
-   local -r CIPH=${MQ_SSL_CIPH:-"RC4_MD5_US"}
-   echo "LOG mq-dev-config.sh : CIPH = ${CIPH}"
-
-  echo "LOG mq-dev-config.sh : configure TLS"
-  # Create keystore
-  if [ ! -e "/tmp/tlsTemp/key.kdb" ]; then
-    # Keystore does not exist
-    echo "LOG mq-dev-config.sh :  Start keys CREATE"
-    echo "LOG mq-dev-config.sh : creating 'kdb' keys"
-	runmqakm -keydb -create -db /tmp/tlsTemp/key.kdb -type cms -pw ${PASSPHRASE} -stash
-	runmqckm -cert -create -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebspheremqsbmq -dn "CN=00CA0001CCFcf99usr,O=Savings Bank of the Russian Federation,C=RU" -size 2048
-	runmqckm -cert -extract -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebspheremqsbmq -target /tmp/tlsTemp/cfmq.arm
-	
-    echo "LOG mq-dev-config.sh : creating keystore"
-	runmqckm -keydb -create -db /tmp/tlsTemp/cfkeystore.jks -type jks -pw ${PASSPHRASE} -stash
-	runmqckm -cert -create -db /tmp/tlsTemp/cfkeystore.jks -pw ${PASSPHRASE} -label cfkeystore -dn "CN=00CA0001CCFcf99usr,OU=00CA,O=Savings Bank of the Russian Federation,C=RU" -size 2048
-	runmqckm -cert -extract -db /tmp/tlsTemp/cfkeystore.jks -pw ${PASSPHRASE} -label cfkeystore -target /tmp/tlsTemp/cfkeystore.arm
-	runmqckm -cert -add -db /tmp/tlsTemp/cfkeystore.jks -pw ${PASSPHRASE} -label sbmq_signer -file /tmp/tlsTemp/cfmq.arm
-
-	runmqckm -cert -list personal -db /tmp/tlsTemp/cfkeystore.jks -pw ${PASSPHRASE}
-	runmqckm -cert -list ca -db /tmp/tlsTemp/cfkeystore.jks -pw ${PASSPHRASE}
-	
-    echo "LOG mq-dev-config.sh : import key to keystore by use keytool"
-	/opt/mqm/java/jre64/jre/bin/keytool -importcert -trustcacerts -noprompt -file /tmp/tlsTemp/cfmq.arm  -keystore /tmp/tlsTemp/cfkeystore.jks -storepass ${PASSPHRASE}
-
-    echo "LOG mq-dev-config.sh :  CREATE KEYS DONE!"
-
+  if [ ! -e ${LOCATION} ]; then
+    echo "Error: The key store '${LOCATION}' referenced in MQ_TLS_KEYSTORE does not exist"
+    exit 1
   fi
 
+  # Create keystore
+  if [ ! -e "/tmp/tlsTemp/key.kdb" ]; then
+	echo "Create keystore"
+    # Keystore does not exist
+    runmqakm -keydb -create -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -stash
+  fi
+
+  # Create stash file
+  if [ ! -e "/tmp/tlsTemp/key.sth" ]; then
+    # No stash file, so create it
+echo "Create stash file"
+    runmqakm -keydb -stashpw -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE}
+  fi
+
+  # Import certificate
+echo "Import certificate '${LOCATION}'"
+  runmqakm -cert -import -file ${LOCATION} -pw ${PASSPHRASE} -target /tmp/tlsTemp/key.kdb -target_pw ${PASSPHRASE}
+
+  # Find certificate to rename it to something MQ can use
+  CERT=`runmqakm -cert -list -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} | egrep -m 1 "^\\**-"`
+  CERTL=`echo ${CERT} | sed -e s/^\\**-//`
+  CERTL=${CERTL:1}
+  echo "Using certificate with label ${CERTL}"
+
+  # Rename certificate
+  runmqakm -cert -rename -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label "${CERTL}" -new_label queuemanagercertificate
 
   # Now copy the key files
-  echo "LOG mq-dev-config.sh: COPY KEYS START!"
-  chown mqm:mqm /tmp/tlsTemp/*.*
-  chmod 640 /tmp/tlsTemp/*.*
-
+  chown mqm:mqm /tmp/tlsTemp/key.*
+  chmod 640 /tmp/tlsTemp/key.*
   su -c "cp -PTv /tmp/tlsTemp/key.kdb ${DATA_PATH}/qmgrs/${MQ_QMGR_NAME}/ssl/key.kdb" -l mqm
   su -c "cp -PTv /tmp/tlsTemp/key.sth ${DATA_PATH}/qmgrs/${MQ_QMGR_NAME}/ssl/key.sth" -l mqm
-  su -c "cp -PTv /tmp/tlsTemp/key.rdb ${DATA_PATH}/qmgrs/${MQ_QMGR_NAME}/ssl/key.rdb" -l mqm
-  su -c "cp -PTv /tmp/tlsTemp/cfmq.arm ${DATA_PATH}/qmgrs/${MQ_QMGR_NAME}/ssl/cfmq.arm" -l mqm
-  su -c "cp -PTv /tmp/tlsTemp/cfmq.arm ${DATA_PATH}/keystore/cfmq.arm" -l mqm
-  su -c "cp -PTv /tmp/tlsTemp/cfkeystore.jks ${DATA_PATH}/keystore/cfkeystore.jks" -l mqm
-  echo "LOG mq-dev-config.sh: COPY KEYS END!"
 
+  # Set up Dev default MQ objects
+  # Make channel TLS CHANNEL
+  # Create SSLPEERMAP Channel Authentication record
+  if [ "${MQ_DEV}" == "true" ]; then
+    su -l mqm -c "echo \"ALTER CHANNEL('DEV.APP.SVRCONN') CHLTYPE(SVRCONN) SSLCIPH(TLS_RSA_WITH_AES_256_GCM_SHA384) SSLCAUTH(OPTIONAL)\" | runmqsc ${MQ_QMGR_NAME}"
+    su -l mqm -c "echo \"ALTER CHANNEL('DEV.ADMIN.SVRCONN') CHLTYPE(SVRCONN) SSLCIPH(TLS_RSA_WITH_AES_256_GCM_SHA384) SSLCAUTH(OPTIONAL)\" | runmqsc ${MQ_QMGR_NAME}"
+  fi
 }
 
+# Check valid parameters
+if [ ! -z ${MQ_TLS_KEYSTORE+x} ]; then
+  : ${MQ_TLS_PASSPHRASE?"Error: If you supply MQ_TLS_KEYSTORE, you must supply MQ_TLS_PASSPHRASE"}
+fi
 
-echo "LOG mq-dev-config.sh : start config}"
-echo "LOG mq-dev-config.sh : INIT params:"
 # Set default unless it is set
 MQ_DEV=${MQ_DEV:-"true"}
-echo "LOG mq-dev-config.sh : MQ_DEV = ${MQ_DEV}"
-
-MQ_SSL=${MQ_SSL:-"false"}
-echo "LOG mq-dev-config.sh : USE_SSL = ${MQ_SSL}"
+MQ_ADMIN_NAME="admin"
+MQ_ADMIN_PASSWORD=${MQ_ADMIN_PASSWORD:-"passw0rd"}
+MQ_APP_NAME="app"
+MQ_APP_PASSWORD=${MQ_APP_PASSWORD:-""}
 
 # Set needed variables to point to various MQ directories
 DATA_PATH=`dspmqver -b -f 4096`
 INSTALLATION=`dspmqver -b -f 512`
 
-echo "LOG mq-dev-config.sh : Configuring app user"
-if ! getent group mqclient; then
-  # Group doesn't exist already
-  groupadd mqclient
-fi
-
-# Set authorities to give access to qmgr, queues and topic
-su -l mqm -c "setmqaut -m ${MQ_QMGR_NAME} -t qmgr -g mqclient +connect +inq"
-su -l mqm -c "setmqaut -m ${MQ_QMGR_NAME} -n \"ESB.**\" -t queue -g mqclient +put +get +browse"
-
-
-if [ "${MQ_SSL}" == "true" ]; then
-    echo "LOG mq-dev-config.sh : Start configuring TLS for queue manager ${MQ_QMGR_NAME}"
-    if [ ! -e "${DATA_PATH}/qmgrs/${MQ_QMGR_NAME}/ssl/key.kdb" ]; then
-        echo "LOG mq-dev-config.sh : New configuring TLS for queue manager ${MQ_QMGR_NAME}"
-        mkdir -p /tmp/tlsTemp
-        mkdir -p ${DATA_PATH}/keystore
-        chown mqm:mqm ${DATA_PATH}/keystore
-        chown mqm:mqm /tmp/tlsTemp
-        configure_tls
-    else
-        echo "LOG mq-dev-config.sh : A key store already exists at '${DATA_PATH}/qmgrs/${MQ_QMGR_NAME}/ssl/key.kdb'"
-    fi
-fi
-
 if [ "${MQ_DEV}" == "true" ]; then
-  echo "LOG mq-dev-config.sh : Configuring default objects for queue manager: ${MQ_QMGR_NAME}"
+
+  echo "Configuring default objects for queue manager: ${MQ_QMGR_NAME}"
   set +e
   runmqsc ${MQ_QMGR_NAME} < /etc/mqm/mq-dev-config
+
   set -e
+fi
+
+if [ ! -z ${MQ_TLS_KEYSTORE+x} ]; then
+  if [ ! -e "${DATA_PATH}/qmgrs/${MQ_QMGR_NAME}/ssl/key.kdb" ]; then
+    echo "Configuring TLS for queue manager ${MQ_QMGR_NAME}"
+    mkdir -p /tmp/tlsTemp
+    chown mqm:mqm /tmp/tlsTemp
+    configure_tls
+  else
+    echo "A key store already exists at '${DATA_PATH}/qmgrs/${MQ_QMGR_NAME}/ssl/key.kdb'"
+  fi
 fi

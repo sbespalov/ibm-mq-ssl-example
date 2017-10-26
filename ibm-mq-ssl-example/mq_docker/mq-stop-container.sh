@@ -16,6 +16,5 @@
 
 set -e
 
-echo "LOG mq-stop-container.sh: STOPING ${MQ_QMGR_NAME}"
 endmqm ${MQ_QMGR_NAME}
-#which endmqweb && su -c "endmqweb" -l mqm
+which endmqweb && su -c "endmqweb" -l mqm

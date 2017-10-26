@@ -18,7 +18,6 @@
 set +e
 
 for MQSC_FILE in $(ls -v /etc/mqm/*.mqsc); do
-  echo "LOG mq-configure-qmgr.sh : runmqsc ${MQSC_FILE}"
   runmqsc ${MQ_QMGR_NAME} < ${MQSC_FILE}
 done
 

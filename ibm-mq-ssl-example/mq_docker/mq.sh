@@ -21,8 +21,8 @@ echo "----------CHECK PARAMETERS SCRIPT RUN---------------------"
 source mq-parameter-check.sh
 echo "-----------SETUP VAR SCRIPT RUN--------------------------"
 setup-var-mqm.sh
-echo "--------------SETUP WEB------------------------"
-which strmqweb && source setup-mqm-web.sh
+#echo "--------------SETUP WEB------------------------"
+#which strmqweb && source setup-mqm-web.sh
 echo "-----------PRE CREATE SCRIPT RUN-------------------------"
 mq-pre-create-setup.sh
 echo "------------CREATE QMGR SCRIPT RUN------------------------"
