@@ -32,8 +32,16 @@ configure_tls()
     echo "LOG mq-dev-config.sh :  Start keys CREATE"
     echo "LOG mq-dev-config.sh : creating 'kdb' keys"
 	runmqakm -keydb -create -db /tmp/tlsTemp/key.kdb -type cms -pw ${PASSPHRASE} -stash
-	runmqckm -cert -create -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebspheremqsbmq -dn "CN=00CA0001CCFcf99usr,O=Savings Bank of the Russian Federation,C=RU" -size 2048
-	runmqckm -cert -extract -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebspheremqsbmq -target /tmp/tlsTemp/cfmq.arm
+	  # Create stash file
+	if [ ! -e "/tmp/tlsTemp/key.sth" ]; then
+    echo "No stash file, so create it"
+	 
+    	runmqakm -keydb -stashpw -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE}
+	fi
+	
+	runmqckm -cert -create -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebspheremqqm1 -dn "CN=00CA0001CCFcf99usr,O=Savings Bank of the Russian Federation,C=RU" -size 2048
+	runmqckm -cert -extract -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebspheremqqm1 -target /tmp/tlsTemp/cfmq.arm
+
 	
     echo "LOG mq-dev-config.sh : creating keystore"
 	runmqckm -keydb -create -db /tmp/tlsTemp/cfkeystore.jks -type jks -pw ${PASSPHRASE} -stash

@@ -9,9 +9,11 @@ services:
       - MQ_SSL=true
       - MQ_SSL_PASS=passw0rd
       - MQ_SSL_CIPH=RC4_MD5_US  
-      - AMQ_SSL_V3_ENABLE=1
+      - AMQ_SSL_V3_ENABLE=true
+      - AMQ_SSL_WEAK_CIPHER_ENABLE=RC4_MD5_US
       - LICENSE=accept
     ports:
       - "1414:1414"
     volumes:
-      - ./ssl/keystore:/var/mqm/keystore
+      - ./ssl/keystore:/tmp/tlsTemp
+      - ./mqm:/var/mqm

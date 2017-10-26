@@ -17,7 +17,7 @@ public class Main
         private String host = "localhost";
         private Integer port = 1414;
         private String queueManager = "QM1";
-        private String channel = "CF.SVRCONN";
+        private String channel = "QM1.SVRCONN";
 
         private String sslciph = "SSL_RSA_WITH_RC4_128_MD5";
         private String sslpass = "passw0rd";
@@ -55,7 +55,7 @@ public class Main
 
         java.security.Security.setProperty("jdk.tls.disabledAlgorithms", config.disabledAlgorithms.trim());
 
-        mqQueueConnectionFactory.setSSLCipherSuite(config.sslciph);
+        mqQueueConnectionFactory.setSSLCipherSuite(config.sslciph = "SSL_RSA_WITH_RC4_128_MD5");
         mqQueueConnectionFactory.setTransportType(WMQConstants.WMQ_CM_CLIENT);
         mqQueueConnectionFactory.setCCSID(config.ccsid);
         mqQueueConnectionFactory.setChannel(config.channel);
