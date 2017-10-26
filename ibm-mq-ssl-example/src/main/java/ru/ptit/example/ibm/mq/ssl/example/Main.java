@@ -1,6 +1,5 @@
 package ru.ptit.example.ibm.mq.ssl.example;
 
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
