@@ -17,4 +17,4 @@ services:
     volumes:
       - ./ssl/keystore:/tmp/tlsTemp
       # Volume to persist container data
-      #- ./mqm:/var/mqm
+      - ./mqm:/var/mqm

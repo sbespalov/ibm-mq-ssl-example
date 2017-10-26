@@ -31,7 +31,7 @@ public class Main
         private String preferTLS = Boolean.TRUE.toString();
         private String useIBMCipherMappings = Boolean.TRUE.toString();;
         private String disabledAlgorithms = "";
-        private String debugSSL = "false";//all
+        private String debugSSL = "all";//all
     }
 
     public static void main(String[] args)

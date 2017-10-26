@@ -52,32 +52,16 @@ configure_tls()
   # Create keystore
   if [ ! -e "/tmp/tlsTemp/key.kdb" ]; then
     # Keystore does not exist
-    echo "LOG mq-dev-config.sh :  Start keys CREATE"
     echo "LOG mq-dev-config.sh : creating 'kdb' keys"
 	runmqakm -keydb -create -db /tmp/tlsTemp/key.kdb -type cms -pw ${PASSPHRASE} -stash
-	  # Create stash file
-	if [ ! -e "/tmp/tlsTemp/key.sth" ]; then
-    echo "No stash file, so create it"
-	 
-    	runmqakm -keydb -stashpw -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE}
-	fi
 	
-runmqckm -cert -create -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebspheremq${MQ_QMGR_NAME} -dn "CN=00CA0001CCFcf99usr,O=Savings Bank of the Russian Federation,C=RU" -size 2048
-	runmqckm -cert -extract -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebspheremq${MQ_QMGR_NAME} -target /tmp/tlsTemp/cfmq.arm
+	runmqckm -cert -create -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebspheremq${MQ_QMGR_NAME,,} -dn "CN=00CA0001CCFcf99usr,O=Savings Bank of the Russian Federation,C=RU" -size 2048
+	runmqckm -cert -extract -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebspheremq${MQ_QMGR_NAME,,} -target /tmp/tlsTemp/cfmq.arm
 
-	
-    echo "LOG mq-dev-config.sh : creating keystore"
+    echo "LOG mq-dev-config.sh : creating JDK client keystore"
 	runmqckm -keydb -create -db /tmp/tlsTemp/cfkeystore.jks -type jks -pw ${PASSPHRASE} -stash
-	runmqckm -cert -create -db /tmp/tlsTemp/cfkeystore.jks -pw ${PASSPHRASE} -label cfkeystore -dn "CN=00CA0001CCFcf99usr,OU=00CA,O=Savings Bank of the Russian Federation,C=RU" -size 2048
-	runmqckm -cert -extract -db /tmp/tlsTemp/cfkeystore.jks -pw ${PASSPHRASE} -label cfkeystore -target /tmp/tlsTemp/cfkeystore.arm
-	runmqckm -cert -add -db /tmp/tlsTemp/cfkeystore.jks -pw ${PASSPHRASE} -label sbmq_signer -file /tmp/tlsTemp/cfmq.arm
-
-	runmqckm -cert -list personal -db /tmp/tlsTemp/cfkeystore.jks -pw ${PASSPHRASE}
-	runmqckm -cert -list ca -db /tmp/tlsTemp/cfkeystore.jks -pw ${PASSPHRASE}
+	runmqckm -cert -add -db /tmp/tlsTemp/cfkeystore.jks -pw ${PASSPHRASE} -label ibmwebspheremq${MQ_QMGR_NAME,,} -file /tmp/tlsTemp/cfmq.arm
 	
-    echo "LOG mq-dev-config.sh : import key to keystore by use keytool"
-	/opt/mqm/java/jre64/jre/bin/keytool -importcert -trustcacerts -noprompt -file /tmp/tlsTemp/cfmq.arm  -keystore /tmp/tlsTemp/cfkeystore.jks -storepass ${PASSPHRASE}
-
     echo "LOG mq-dev-config.sh :  CREATE KEYS DONE!"
 
   fi
@@ -97,7 +81,6 @@ runmqckm -cert -create -db /tmp/tlsTemp/key.kdb -pw ${PASSPHRASE} -label ibmwebs
   echo "LOG mq-dev-config.sh: COPY KEYS END!"
 
 }
-
 
 echo "LOG mq-dev-config.sh : start config}"
 echo "LOG mq-dev-config.sh : INIT params:"
